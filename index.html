@@ -1,46 +1,237 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dead Strike</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dead Strike - 在线游玩</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0f;
+      color: #e0e0e0;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 16px 24px;
+      background: #12121a;
+      border-bottom: 1px solid #1e1e2e;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #ff4444;
+    }
+
+    header span {
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .game-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      gap: 16px;
+    }
+
+    .game-container {
+      position: relative;
+      width: 100%;
+      max-width: 960px;
+      aspect-ratio: 16 / 9;
+      background: #0d0d14;
+      border: 1px solid #1e1e2e;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    /* 骨架屏 / 加载状态 */
+    .skeleton {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: #0d0d14;
+      transition: opacity 0.3s;
+      z-index: 2;
+    }
+
+    .skeleton.hidden { opacity: 0; pointer-events: none; }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #1e1e2e;
+      border-top-color: #ff4444;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .skeleton p { font-size: 0.85rem; color: #555; }
+
+    /* 错误状态 */
+    .error-state {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: #0d0d14;
+      z-index: 3;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .error-state.visible { display: flex; }
+
+    .error-state h2 { color: #ff4444; font-size: 1.1rem; }
+    .error-state p { font-size: 0.85rem; color: #666; max-width: 360px; line-height: 1.6; }
+
+    .error-state a {
+      color: #ff4444;
+      text-decoration: none;
+      border: 1px solid #ff4444;
+      padding: 8px 20px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .error-state a:hover { background: #ff444420; }
+
+    iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      z-index: 1;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+    }
+
+    button {
+      background: #1a1a26;
+      border: 1px solid #2a2a3e;
+      color: #ccc;
+      padding: 8px 18px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #22223a; }
+
+    footer {
+      text-align: center;
+      padding: 14px;
+      font-size: 0.75rem;
+      color: #333;
+      border-top: 1px solid #1a1a26;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🎯 Dead Strike</h1>
-            <p class="tagline">Precision. Speed. Impact.</p>
-        </header>
-        
-        <main>
-            <section class="hero">
-                <h2>Welcome to Dead Strike</h2>
-                <p>A modern web application built for performance and reliability.</p>
-                <button id="action-btn">Get Started</button>
-            </section>
-            
-            <section class="features">
-                <div class="feature-card">
-                    <h3>⚡ Fast</h3>
-                    <p>Optimized for speed and performance.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>🔒 Secure</h3>
-                    <p>Built with security in mind.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>📱 Responsive</h3>
-                    <p>Works on all devices.</p>
-                </div>
-            </section>
-        </main>
-        
-        <footer>
-            <p>&copy; 2026 Dead Strike. All rights reserved.</p>
-        </footer>
+
+<header>
+  <h1>DEAD STRIKE</h1>
+  <span>在线游玩</span>
+</header>
+
+<div class="game-wrapper">
+  <div class="game-container" id="gameContainer">
+    <!-- 加载骨架屏 -->
+    <div class="skeleton" id="skeleton">
+      <div class="spinner"></div>
+      <p>游戏加载中，请稍候…</p>
     </div>
-    
-    <script src="script.js"></script>
+
+    <!-- 加载失败提示 -->
+    <div class="error-state" id="errorState">
+      <h2>游戏加载失败</h2>
+      <p>可能是网络问题或该页面不支持嵌入。请尝试直接前往原站游玩。</p>
+      <a href="https://geometrylitepc.io/dead-strike" target="_blank" rel="noopener">前往原站 →</a>
+    </div>
+
+    <iframe
+      id="gameFrame"
+      src="https://geometrylitepc.io/dead-strike"
+      title="Dead Strike 游戏"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups"
+      referrerpolicy="no-referrer"
+      loading="lazy"
+      allow="fullscreen"
+      onload="onFrameLoad()"
+      onerror="onFrameError()"
+    ></iframe>
+  </div>
+
+  <div class="controls">
+    <button onclick="toggleFullscreen()">全屏</button>
+    <button onclick="reloadGame()">重新加载</button>
+  </div>
+</div>
+
+<footer>游戏内容来源：geometrylitepc.io · 仅供体验</footer>
+
+<script>
+  const frame = document.getElementById('gameFrame');
+  const skeleton = document.getElementById('skeleton');
+  const errorState = document.getElementById('errorState');
+
+  // 超时处理：15s 内未触发 onload 则显示错误
+  let loadTimer = setTimeout(onFrameError, 15000);
+
+  function onFrameLoad() {
+    clearTimeout(loadTimer);
+    skeleton.classList.add('hidden');
+  }
+
+  function onFrameError() {
+    clearTimeout(loadTimer);
+    skeleton.classList.add('hidden');
+    errorState.classList.add('visible');
+  }
+
+  function reloadGame() {
+    errorState.classList.remove('visible');
+    skeleton.classList.remove('hidden');
+    frame.src = frame.src;
+    loadTimer = setTimeout(onFrameError, 15000);
+  }
+
+  function toggleFullscreen() {
+    const container = document.getElementById('gameContainer');
+    if (!document.fullscreenElement) {
+      container.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen();
+    }
+  }
+</script>
+
 </body>
 </html>
